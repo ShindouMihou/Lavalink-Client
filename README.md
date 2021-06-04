@@ -52,7 +52,7 @@ dev-SNAPSHOT
 Version tags of this client are expected to roughly follow lavalink server versioning.
 
 ## Usage
-This guide assumes you have JDA in your classpath, and your bot is written with JDA.
+This guide assumes you have Javacord in your classpath, and your bot is written with Javacord.
 
 ### Configuring Lavalink
 All your shards should share a single Lavalink instance. Here is how to construct an instance:
@@ -106,7 +106,7 @@ Here are a few important methods:
 
 The `IPlayer` more or less works like a drop-in replacement for Lavaplayer's `AudioPlayer`. Which leads me to...
 
-**Warning:** You should not use JDA's `VoiceChannel#connect()` or `AudioConnection#close()` when Lavalink is being used. Use `Link` instead.
+**Warning:** You should not use Javacord's `VoiceChannel#connect()` or `AudioConnection#close()` when Lavalink is being used. Use `Link` instead.
 
 ### Using Lavalink and Lavaplayer in the same codebase
 One of the requirements for Lavalink to work with FredBoat was to make Lavalink optional, so we could support selfhosters who do not want to run Lavalink. (This has since been removed from FredBoat).
