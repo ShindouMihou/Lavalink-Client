@@ -8,6 +8,7 @@ import org.javacord.api.audio.AudioConnection;
 import org.javacord.api.entity.channel.ServerVoiceChannel;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.entity.user.User;
+import org.javacord.api.util.logging.ExceptionLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,17 +41,19 @@ public class JavacordLink extends Link {
         if(!channel.hasPermissions(self, PermissionType.CONNECT, PermissionType.MOVE_MEMBERS))
             throw new IllegalStateException("Missing Permission: " + PermissionType.CONNECT + " on channel: " + channel.getId());
 
-        if(!channel.getServer().getAudioConnection().isPresent()) return;
+        // This checks if the bot is already connected.
+        if(channel.getServer().getAudioConnection().isPresent()) {
 
-        AudioConnection voiceState = channel.getServer().getAudioConnection().get();
-        if(checkChannel && channel.getId() == voiceState.getChannel().getId())
-            return;
+            AudioConnection voiceState = channel.getServer().getAudioConnection().get();
+            if (checkChannel && channel.getId() == voiceState.getChannel().getId())
+                return;
 
-        if(voiceState.getChannel().isConnected(self)){
-            final int userLimit = channel.getUserLimit().orElse(0);
-            if(!channel.getServer().isOwner(self) && !channel.getServer().hasPermission(self, PermissionType.ADMINISTRATOR)){
-                if(userLimit > 0 && userLimit <= channel.getConnectedUserIds().size() && !channel.hasPermission(self, PermissionType.MOVE_MEMBERS))
-                    throw new IllegalStateException("Unable to connect to voice channel due to user limit! Missing permission: " + PermissionType.MOVE_MEMBERS + " on channel: " + channel.getId() + " which is used for bypassing user limit!");
+            if (voiceState.getChannel().isConnected(self)) {
+                final int userLimit = channel.getUserLimit().orElse(0);
+                if (!channel.getServer().isOwner(self) && !channel.getServer().hasPermission(self, PermissionType.ADMINISTRATOR)) {
+                    if (userLimit > 0 && userLimit <= channel.getConnectedUserIds().size() && !channel.hasPermission(self, PermissionType.MOVE_MEMBERS))
+                        throw new IllegalStateException("Unable to connect to voice channel due to user limit! Missing permission: " + PermissionType.MOVE_MEMBERS + " on channel: " + channel.getId() + " which is used for bypassing user limit!");
+                }
             }
         }
 
@@ -80,9 +83,9 @@ public class JavacordLink extends Link {
     @Override
     protected void queueAudioConnect(long channelId) {
         if(getApi().getServerVoiceChannelById(channelId).isPresent()){
-            getApi().getServerVoiceChannelById(channelId).get().connect();
+            getApi().getServerVoiceChannelById(channelId).get().connect().exceptionally(ExceptionLogger.get());
         } else {
-            log.warn("Attempted ot connect, but voice channel {} was not found.", channelId);
+            log.warn("Attempted to connect, but voice channel {} was not found.", channelId);
         }
     }
 }
