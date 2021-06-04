@@ -83,7 +83,7 @@ public class JavacordLink extends Link {
     @Override
     protected void queueAudioConnect(long channelId) {
         if(getApi().getServerVoiceChannelById(channelId).isPresent()){
-            getApi().getServerVoiceChannelById(channelId).get().connect().exceptionally(ExceptionLogger.get());
+            getApi().getServerVoiceChannelById(channelId).get().connect().join();
         } else {
             log.warn("Attempted to connect, but voice channel {} was not found.", channelId);
         }
