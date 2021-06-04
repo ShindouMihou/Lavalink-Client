@@ -8,6 +8,7 @@ import org.javacord.api.audio.AudioConnection;
 import org.javacord.api.entity.channel.ServerVoiceChannel;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.entity.user.User;
+import org.javacord.core.entity.server.ServerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +74,12 @@ public class JavacordLink extends Link {
     @Override
     protected void queueAudioDisconnect() {
         if(getApi().getServerById(guild).isPresent()){
-            getApi().getServerById(guild).get().getAudioConnection().ifPresent(AudioConnection::close);
+            // This is a temporary measure until Javacord fixes
+            // the part where it fixes AudioConnection unable to close when Lavalink takes over the connection.
+            getApi().getServerById(guild).map(server -> (ServerImpl) server).ifPresent(o -> o.getAudioConnection().ifPresent(audioConnection -> {
+                o.moveYourself(null);
+                o.removeAudioConnection(audioConnection);
+            }));
         } else {
             log.warn("Attempted to disconnect, but guild {} was not found.", guild);
         }
