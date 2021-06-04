@@ -19,11 +19,9 @@ public class JavacordVoiceInterceptor implements VoiceStateUpdateListener, Voice
 
     @Override
     public void onVoiceServerUpdate(VoiceServerUpdateEvent event) {
-        JSONObject content = new JSONObject().put("token", event.getToken())
-                .put("endpoint", event.getEndpoint()).put("guild_id", event.getServer().getIdAsString());
-
         event.getServer().getAudioConnection().map(audioConnection -> (AudioConnectionImpl) audioConnection)
-                .ifPresent(audioConnection -> lavalink.getLink(event.getServer()).onVoiceServerUpdate(content, audioConnection.getSessionId()));
+                .ifPresent(audioConnection -> lavalink.getLink(event.getServer()).onVoiceServerUpdate(new JSONObject().put("token", event.getToken())
+                        .put("endpoint", event.getEndpoint()).put("guild_id", event.getServer().getIdAsString()), audioConnection.getSessionId()));
     }
 
     @Override
