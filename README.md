@@ -1,4 +1,7 @@
-# Lavalink Client [![Release](https://img.shields.io/github/tag/freyacodes/Lavalink-Client.svg)](https://jitpack.io/#freyacodes/Lavalink-Client)
+# Lavalink Client [![Release](https://img.shields.io/github/tag/ShindouMihou/Lavalink-Client.svg)](https://jitpack.io/#freyacodes/Lavalink-Client)
+
+## This is a fork of JDA's version, porting to Javacord.
+Please expect any information on this README to be suited straight for Javacord.
 
 ## Installation
 Lavalink does not have a maven repository and instead uses Jitpack.
@@ -6,7 +9,7 @@ You can add the following to your POM if you're using Maven:
 ```xml
 <dependencies>
     <dependency>
-        <groupId>com.github.freyacodes</groupId>
+        <groupId>com.github.ShindouMihou</groupId>
         <artifactId>Lavalink-Client</artifactId>
         <version>x.y.z</version>
     </dependency>
@@ -30,7 +33,7 @@ Or Gradle:
     }
 
     dependencies {
-        compile group: 'com.github.freyacodes', name: 'Lavalink-Client', version: 'x.y.z'
+        compile group: 'com.github.ShindouMihou', name: 'Lavalink-Client', version: 'x.y.z'
     }
 ```
 
@@ -48,16 +51,6 @@ dev-SNAPSHOT
 
 Version tags of this client are expected to roughly follow lavalink server versioning.
 
-## Migrating from v3 to v4
-Version 4 drops JDA3 support in favour of JDA4. This uses a non-internal JDA API to intercept voice handling. This requires adding an interceptor to your `JDABuilder` or `DefaultShardManagerBuilder`. See examples of using `#setVoiceDispatchInterceptor` below.
-
-## Migrating from v2 to v3
-The v3 client has been made to be generic, meaning that the base client can now be used without JDA.
-This will break bots built on v2, as the classes `Lavalink` and `Link` has been made abstract.
-For use with JDA you will want to reference the JDA-specific implementations `JdaLavalink` and `JdaLink`.
-
-If you for some reason need to use the abstract classes, you might experience type erasure problems.
-
 ## Usage
 This guide assumes you have JDA in your classpath, and your bot is written with JDA.
 
@@ -65,19 +58,19 @@ This guide assumes you have JDA in your classpath, and your bot is written with 
 All your shards should share a single Lavalink instance. Here is how to construct an instance:
 
 ```java
-JdaLavalink lavalink = new JdaLavalink(
+JavacordLavalink lavalink = new JavacordLavalink(
                 myDiscordUserId,
                 fixedNumberOfShards,
-                shardId -> getJdaInstanceFromId(shardId)
+                shardId -> a way to get the Discord API
         );
 ```
 
-The interesting part is the third parameter, which is a `Function<Integer, JDA>`.
-You must define this `Function` so that Lavalink can get your current JDA instance for that shardId.
+The interesting part is the third parameter, which is a `Function<Integer, DiscordApi>`.
+You must define this `Function` so that Lavalink can get your current DiscordApi instance for that shardId.
 
 You can now register remote nodes to your Lavalink instance:
 ```java
-lavalink.addNode("ws://example.com", "my-secret-password");
+lavalink.addNode(new URI("ws://example.com"), "my-secret-password");
 ```
 
 If a node is down Lavalink will continue trying to connect until you remove the node.
@@ -87,19 +80,21 @@ Next when you are building a shard, you must register Lavalink as an event liste
 You may not register more than one Lavalink instance per shard.
 
 ```java
-new JDABuilder(AccountType.BOT)
-        .addEventListener(myJdaLavalinkInstance)
-        .setVoiceDispatchInterceptor(myJdaLavalinkInstance.getVoiceInterceptor())
+new DiscordApiBuilder()
+        .setToken(...)
+        .setIntents(...)
+        .addListener(lavalinkInstance)
+        .addListener(lavalinkInstance.getVoiceInterceptor())
         ...
 ```
 
 ### The Link class
-The `JdaLink` class is the state of one of your guilds in relation to Lavalink.
-A `JdaLink` object is instantiated if it doesn't exist already when invoking `JdaLavalink#getLink(Guild/String)`.
+The `JavacordLink` class is the state of one of your guilds/servers in relation to Lavalink.
+A `JavacordLink` object is instantiated if it doesn't exist already when invoking `JavacordLavalink#getLink(Guild/String)`.
 
 ```java
-JdaLink someLink = myLavalink.getLink(someGuild);
-someLink = myLavalink.getLink(someGuildId);
+JavacordLink someLink = myLavalink.getLink(serverId);
+someLink = myLavalink.getLink(serverId);
 ```
 
 Here are a few important methods:
@@ -111,7 +106,7 @@ Here are a few important methods:
 
 The `IPlayer` more or less works like a drop-in replacement for Lavaplayer's `AudioPlayer`. Which leads me to...
 
-**Warning:** You should not use JDA's `AudioManager#openAudioConnection()` or `AudioManager#closeAudioConnection()` when Lavalink is being used. Use `Link` instead.
+**Warning:** You should not use JDA's `VoiceChannel#connect()` or `AudioConnection#close()` when Lavalink is being used. Use `Link` instead.
 
 ### Using Lavalink and Lavaplayer in the same codebase
 One of the requirements for Lavalink to work with FredBoat was to make Lavalink optional, so we could support selfhosters who do not want to run Lavalink. (This has since been removed from FredBoat).
@@ -140,13 +135,6 @@ Useful methods:
 # Common pitfalls
 If you are experiencing problems with playing audio or joining a voice channel with Lavalink please check to see if all these apply to you:
 
-1. You are adding the Lavalink instance to your JDABuilder *before* building it. Lavalink must be able to receive the ready event.
+1. You are adding the Lavalink instance to your DiscordApi *before* building it. Lavalink must be able to receive the ready event.
 2. You don't have multiple Lavalink instances.
-3. You don't attempt to join a voice channel via JDA directly.
-
-# Using this client without JDA
-Since this client has been rewritten to be generic, it is possible to write custom implementations of the abstract 
-`Lavalink` and `Link` classes. 
-
-The client was made generic with FredBoat in mind, but if you need generics for your own purposes, you can open an issue 
-and I can elaborate on this brief documentation.
+3. You don't attempt to join a voice channel via Javacord directly (for example, **DO NOT** `someVoiceChannel.connect()` but instead `link.connect(someVoiceChannel)`).
